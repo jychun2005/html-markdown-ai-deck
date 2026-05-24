@@ -122,10 +122,10 @@
 
       .thumb {
         display: grid;
-        grid-template-columns: 32px 1fr;
+        grid-template-columns: 42px 1fr;
         gap: 10px;
         align-items: center;
-        min-height: 46px;
+        min-height: 54px;
         padding: 7px;
         border: 1px solid transparent;
         border-radius: var(--radius);
@@ -142,21 +142,18 @@
         color: var(--ink);
       }
 
-      .thumb-number {
-        display: grid;
-        width: 30px;
-        height: 30px;
-        place-items: center;
-        border-radius: 50%;
-        background: rgba(35, 100, 170, 0.12);
-        color: var(--blue);
-        font-size: 12px;
-        font-weight: 900;
+      .thumb-icon {
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(23, 23, 23, 0.18);
+        border-radius: var(--radius);
+        background: var(--paper-2);
+        object-fit: cover;
       }
 
-      .thumb[aria-current="true"] .thumb-number {
-        background: var(--blue);
-        color: white;
+      .thumb[aria-current="true"] .thumb-icon {
+        border-color: var(--blue);
+        box-shadow: 0 0 0 3px rgba(35, 100, 170, 0.16);
       }
 
       .thumb-label {
@@ -258,6 +255,7 @@
       }
 
       .slide-inner {
+        position: relative;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(320px, 0.86fr);
         gap: clamp(22px, 4vw, 52px);
@@ -284,6 +282,21 @@
         text-transform: uppercase;
       }
 
+      .title-icon {
+        position: absolute;
+        top: 10px;
+        left: 18px;
+        z-index: 1;
+        width: 52px;
+        height: 52px;
+        margin: 0;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: var(--paper-2);
+        object-fit: cover;
+        box-shadow: 8px 8px 0 rgba(35, 100, 170, 0.14);
+      }
+
       h1,
       h2 {
         margin: 0;
@@ -293,8 +306,8 @@
       }
 
       h1 {
-        max-width: 10em;
-        font-size: clamp(42px, 6.8vw, 88px);
+        max-width: 9em;
+        font-size: clamp(40px, 5.7vw, 74px);
         line-height: 0.98;
       }
 
@@ -692,7 +705,7 @@
 
         .thumb {
           grid-template-columns: 1fr;
-          width: 58px;
+          width: 62px;
         }
 
         .thumb-label,
@@ -708,6 +721,13 @@
 
         .slide-inner {
           grid-template-columns: 1fr;
+        }
+
+        .title-icon {
+          position: static;
+          width: 62px;
+          height: 62px;
+          margin-bottom: 14px;
         }
 
         .artifact {
@@ -1155,10 +1175,20 @@
       }
 
       slides.forEach((slide, slideIndex) => {
+        const iconPath = `assets/icons/slide-${pad(slideIndex + 1)}.png`;
+        const content = slide.querySelector(".content");
+        if (content) {
+          const icon = document.createElement("img");
+          icon.className = "title-icon";
+          icon.src = iconPath;
+          icon.alt = `${slide.dataset.title} 圖標`;
+          content.insertBefore(icon, content.firstElementChild);
+        }
+
         const button = document.createElement("button");
         button.type = "button";
         button.className = "thumb";
-        button.innerHTML = `<span class="thumb-number">${pad(slideIndex + 1)}</span><span class="thumb-label">${slide.dataset.title}</span>`;
+        button.innerHTML = `<img class="thumb-icon" src="${iconPath}" alt="" aria-hidden="true"><span class="thumb-label">${slide.dataset.title}</span>`;
         button.addEventListener("click", () => go(slideIndex));
         thumbs.appendChild(button);
 
