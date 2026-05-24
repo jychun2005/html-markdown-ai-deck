@@ -1,0 +1,1215 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HTML 是新的 Markdown？AI Agent 輸出格式之爭</title>
+    <meta
+      name="description"
+      content="盤點 Anthropic 工程師 Thariq Shihipar 提出以 HTML 取代 Markdown 作為 AI agent 輸出格式的事件脈絡。"
+    />
+    <style>
+      :root {
+        --ink: #171717;
+        --paper: #f4efe5;
+        --paper-2: #fffaf0;
+        --muted: #6d665b;
+        --line: rgba(23, 23, 23, 0.16);
+        --red: #c73e2f;
+        --blue: #2364aa;
+        --green: #2f7d62;
+        --yellow: #d7a629;
+        --violet: #5b4b8a;
+        --shadow: 0 28px 80px rgba(28, 24, 18, 0.16);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        background:
+          linear-gradient(90deg, rgba(35, 100, 170, 0.08) 1px, transparent 1px),
+          linear-gradient(rgba(199, 62, 47, 0.07) 1px, transparent 1px),
+          radial-gradient(circle at 10% 15%, rgba(215, 166, 41, 0.22), transparent 28%),
+          radial-gradient(circle at 90% 82%, rgba(47, 125, 98, 0.18), transparent 30%),
+          var(--paper);
+        background-size: 42px 42px, 42px 42px, auto, auto, auto;
+        font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      a {
+        color: var(--blue);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .rail {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px 14px;
+        border-right: 1px solid var(--line);
+        background: rgba(244, 239, 229, 0.86);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 11px;
+        align-items: center;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: var(--red);
+        color: var(--paper-2);
+        font-family: Georgia, "Times New Roman", serif;
+        font-weight: 900;
+      }
+
+      .brand-title {
+        display: block;
+        font-weight: 900;
+        line-height: 1.15;
+      }
+
+      .brand-subtitle {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .thumbs {
+        display: grid;
+        gap: 8px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .thumb {
+        display: grid;
+        grid-template-columns: 32px 1fr;
+        gap: 10px;
+        align-items: center;
+        min-height: 46px;
+        padding: 7px;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        background: transparent;
+        color: var(--muted);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .thumb:hover,
+      .thumb[aria-current="true"] {
+        border-color: var(--line);
+        background: rgba(255, 250, 240, 0.78);
+        color: var(--ink);
+      }
+
+      .thumb-number {
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(35, 100, 170, 0.12);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .thumb[aria-current="true"] .thumb-number {
+        background: var(--blue);
+        color: white;
+      }
+
+      .thumb-label {
+        overflow: hidden;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.35;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .rail-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: auto;
+      }
+
+      .icon-button,
+      .nav-button {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.84);
+        color: var(--ink);
+        cursor: pointer;
+      }
+
+      .icon-button {
+        width: 42px;
+        height: 42px;
+      }
+
+      .icon-button:hover,
+      .nav-button:hover {
+        border-color: rgba(23, 23, 23, 0.36);
+      }
+
+      .stage {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        gap: 14px;
+        min-width: 0;
+        padding: 22px clamp(18px, 4vw, 54px);
+      }
+
+      .topbar {
+        display: grid;
+        gap: 9px;
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .progress {
+        height: 6px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(23, 23, 23, 0.1);
+      }
+
+      .progress span {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--red), var(--yellow), var(--green), var(--blue));
+        transition: width 280ms ease;
+      }
+
+      .slide {
+        display: none;
+        min-height: 620px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.94);
+        box-shadow: var(--shadow);
+      }
+
+      .slide.active {
+        display: grid;
+        animation: enter 320ms ease both;
+      }
+
+      @keyframes enter {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .slide-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.86fr);
+        gap: clamp(22px, 4vw, 52px);
+        padding: clamp(28px, 4.8vw, 62px);
+      }
+
+      .slide.full .slide-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .content {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .kicker {
+        margin: 0 0 14px;
+        color: var(--red);
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", "Noto Serif TC", serif;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        max-width: 10em;
+        font-size: clamp(42px, 6.8vw, 88px);
+        line-height: 0.98;
+      }
+
+      h2 {
+        max-width: 12em;
+        font-size: clamp(34px, 4.8vw, 64px);
+        line-height: 1.06;
+      }
+
+      .lead {
+        max-width: 35em;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: clamp(18px, 1.7vw, 24px);
+        line-height: 1.62;
+      }
+
+      .list {
+        display: grid;
+        gap: 14px;
+        margin: 28px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .list li {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 12px;
+        align-items: start;
+        font-size: clamp(17px, 1.5vw, 22px);
+        line-height: 1.48;
+      }
+
+      .dot {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(199, 62, 47, 0.12);
+        color: var(--red);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .visual {
+        display: grid;
+        align-content: center;
+        gap: 14px;
+        min-width: 0;
+      }
+
+      .artifact {
+        position: relative;
+        min-height: 430px;
+        overflow: hidden;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background:
+          linear-gradient(90deg, rgba(23, 23, 23, 0.05) 1px, transparent 1px),
+          linear-gradient(rgba(23, 23, 23, 0.05) 1px, transparent 1px),
+          white;
+        background-size: 26px 26px;
+      }
+
+      .artifact.browser::before {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 42px;
+        border-bottom: 2px solid var(--ink);
+        background: #eee5d7;
+        content: "";
+      }
+
+      .window-dots {
+        position: absolute;
+        top: 15px;
+        left: 18px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .window-dots span {
+        width: 12px;
+        height: 12px;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+      }
+
+      .window-dots span:nth-child(1) {
+        background: var(--red);
+      }
+
+      .window-dots span:nth-child(2) {
+        background: var(--yellow);
+      }
+
+      .window-dots span:nth-child(3) {
+        background: var(--green);
+      }
+
+      .mini-doc {
+        position: absolute;
+        inset: 74px 34px 36px;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 18px;
+      }
+
+      .mini-title {
+        width: 74%;
+        height: 28px;
+        border-radius: 999px;
+        background: var(--blue);
+      }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mini-card {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(244, 239, 229, 0.8);
+      }
+
+      .mini-card b {
+        display: block;
+        width: 64%;
+        height: 14px;
+        border-radius: 999px;
+        background: var(--red);
+      }
+
+      .mini-card i {
+        display: block;
+        height: 9px;
+        margin-top: 11px;
+        border-radius: 999px;
+        background: rgba(23, 23, 23, 0.16);
+      }
+
+      .mini-card i:nth-child(3) {
+        width: 78%;
+      }
+
+      .mini-card i:nth-child(4) {
+        width: 52%;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 13px;
+        margin-top: 28px;
+      }
+
+      .event {
+        display: grid;
+        grid-template-columns: 116px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.48);
+      }
+
+      .event time {
+        color: var(--blue);
+        font-weight: 900;
+      }
+
+      .event strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .card {
+        min-height: 132px;
+        padding: 17px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--green);
+        font-size: 18px;
+      }
+
+      .card span,
+      .event span {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 28px;
+      }
+
+      .compare-panel {
+        padding: 18px;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .compare-panel h3 {
+        margin: 0 0 14px;
+        font-size: 22px;
+      }
+
+      .compare-panel ul {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .matrix div {
+        min-height: 120px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      .matrix b {
+        display: block;
+        margin-bottom: 9px;
+        color: var(--red);
+      }
+
+      .sources {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+
+      .source {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.5);
+        line-height: 1.5;
+      }
+
+      .source small {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      .notes {
+        display: none;
+        padding: 15px 17px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.9);
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .notes.visible {
+        display: block;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .nav-button {
+        min-width: 104px;
+        padding: 11px 16px;
+        font-weight: 900;
+      }
+
+      .nav-button.primary {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: var(--paper-2);
+      }
+
+      .nav-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      .overview {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: rgba(23, 23, 23, 0.48);
+        backdrop-filter: blur(10px);
+      }
+
+      .overview[hidden] {
+        display: none;
+      }
+
+      .overview-panel {
+        width: min(1080px, 100%);
+        max-height: 88vh;
+        overflow: auto;
+        padding: 24px;
+        border-radius: var(--radius);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .overview-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+      }
+
+      .overview-card {
+        min-height: 112px;
+        padding: 15px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.78);
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .overview-card small {
+        color: var(--red);
+        font-weight: 900;
+      }
+
+      .overview-card strong {
+        display: block;
+        margin-top: 8px;
+        line-height: 1.45;
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .rail {
+          position: sticky;
+          top: 0;
+          z-index: 4;
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          align-items: center;
+          padding: 10px;
+        }
+
+        .thumbs {
+          display: flex;
+          overflow-x: auto;
+        }
+
+        .thumb {
+          grid-template-columns: 1fr;
+          width: 58px;
+        }
+
+        .thumb-label,
+        .brand-subtitle,
+        .brand-title {
+          display: none;
+        }
+
+        .slide,
+        .slide-inner {
+          min-height: auto;
+        }
+
+        .slide-inner {
+          grid-template-columns: 1fr;
+        }
+
+        .artifact {
+          min-height: 330px;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .stage {
+          padding: 14px;
+        }
+
+        .slide-inner {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+
+        h2 {
+          font-size: 34px;
+        }
+
+        .cards,
+        .compare,
+        .matrix,
+        .sources {
+          grid-template-columns: 1fr;
+        }
+
+        .event {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <aside class="rail" aria-label="簡報導覽">
+        <button class="brand" id="homeButton" type="button" aria-label="回到首頁">
+          <span class="brand-mark">HTML</span>
+          <span>
+            <span class="brand-title">AI 輸出格式之爭</span>
+            <span class="brand-subtitle">Markdown 到 HTML artifact</span>
+          </span>
+        </button>
+        <nav class="thumbs" id="thumbs" aria-label="投影片列表"></nav>
+        <div class="rail-actions">
+          <button class="icon-button" id="overviewButton" type="button" title="總覽" aria-label="開啟總覽">☷</button>
+          <button class="icon-button" id="notesButton" type="button" title="講者備註" aria-label="切換講者備註">✎</button>
+        </div>
+      </aside>
+
+      <section class="stage" aria-label="投影片舞台">
+        <div class="topbar">
+          <div class="meta-row">
+            <span id="sectionLabel">事件摘要</span>
+            <span id="counter">01 / 12</span>
+          </div>
+          <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+        </div>
+
+        <section class="slide active" data-section="事件摘要" data-title="HTML 是新的 Markdown？" data-note="開場先讓聽眾知道：這不是一般網頁技術爭論，而是 AI agent 的人機協作介面正在改變。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">2026.05 / AI Agent Workflow</p>
+              <h1>HTML 是新的 Markdown？</h1>
+              <p class="lead">Anthropic 工程師 Thariq Shihipar 提出：當 AI 產出的計畫、報告與審查內容變得又長又複雜，HTML 比 Markdown 更像一個能讓人持續參與的工作介面。</p>
+            </div>
+            <div class="visual">
+              <div class="artifact browser">
+                <div class="window-dots"><span></span><span></span><span></span></div>
+                <div class="mini-doc">
+                  <div class="mini-title"></div>
+                  <div class="mini-grid">
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="事件時間線" data-title="事件怎麼發生" data-note="這張用來交代時間脈絡：X 貼文、官方部落格、範例集、社群回應幾乎在同一週集中爆發。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Timeline</p>
+              <h2>一則工程師貼文，引爆輸出格式討論</h2>
+              <div class="timeline">
+                <div class="event"><time>2026/05/08</time><div><strong>Thariq Shihipar 發表觀點</strong><span>主張在 Claude Code 工作流中，越來越多輸出應使用 HTML，而非 Markdown。</span></div></div>
+                <div class="event"><time>同日</time><div><strong>Simon Willison 跟進評論</strong><span>他表示重新思考自己多年來要求 AI 輸出 Markdown 的預設習慣。</span></div></div>
+                <div class="event"><time>同週</time><div><strong>二十個 HTML 範例被整理成 gallery</strong><span>涵蓋 PR review、計畫、設計探索、報告、臨時編輯器等場景。</span></div></div>
+                <div class="event"><time>之後</time><div><strong>社群開始攻防</strong><span>支持者看重互動與可讀性，反對者指出 token、版本控制、長期保存成本。</span></div></div>
+              </div>
+            </div>
+            <div class="visual">
+              <div class="artifact">
+                <svg viewBox="0 0 520 420" role="img" aria-label="事件擴散圖">
+                  <rect x="44" y="46" width="150" height="70" fill="#c73e2f" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="119" y="88" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">X 貼文</text>
+                  <rect x="294" y="46" width="170" height="70" fill="#2364aa" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="379" y="88" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">Claude Blog</text>
+                  <rect x="64" y="250" width="150" height="70" fill="#2f7d62" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="139" y="292" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">範例集</text>
+                  <rect x="310" y="250" width="150" height="70" fill="#d7a629" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="385" y="292" text-anchor="middle" fill="#171717" font-size="22" font-weight="800">社群辯論</text>
+                  <path d="M195 81 H294" stroke="#171717" stroke-width="4" marker-end="url(#arrow)" />
+                  <path d="M355 116 C330 190 230 205 158 250" stroke="#171717" stroke-width="4" fill="none" marker-end="url(#arrow)" />
+                  <path d="M215 285 H310" stroke="#171717" stroke-width="4" marker-end="url(#arrow)" />
+                  <defs>
+                    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                      <path d="M0,0 L0,6 L9,3 z" fill="#171717" />
+                    </marker>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="核心主張" data-title="不是檔案格式，是介面" data-note="這張是整份簡報的核心。Thariq 的重點不是 HTML 語法比較偉大，而是人類需要更好地審閱 agent 的輸出。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Core Argument</p>
+              <h2>Markdown 是文件，HTML 可以是工作介面</h2>
+              <ul class="list">
+                <li><span class="dot">1</span><span>AI agent 產出的內容越來越長，單純文字文件會降低人類審閱意願。</span></li>
+                <li><span class="dot">2</span><span>HTML 可以把同一批資訊變成可瀏覽、可篩選、可互動、可回傳的 artifact。</span></li>
+                <li><span class="dot">3</span><span>當人真的讀得下去、看得懂、能調整，監督品質才會提升。</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="compare">
+                <div class="compare-panel">
+                  <h3>Markdown</h3>
+                  <ul>
+                    <li>線性閱讀</li>
+                    <li>適合筆記與版本控制</li>
+                    <li>長篇容易成為文字牆</li>
+                    <li>互動能力弱</li>
+                  </ul>
+                </div>
+                <div class="compare-panel">
+                  <h3>HTML</h3>
+                  <ul>
+                    <li>可視覺化布局</li>
+                    <li>可加入 SVG / CSS / JS</li>
+                    <li>可做互動決策介面</li>
+                    <li>分享後更像網頁工具</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="為何是現在" data-title="Context 變大，問題也變大" data-note="把背景說清楚：早期 Markdown 的 token 效率很重要；現在大 context 與 agent 工作流讓可讀性成為新的瓶頸。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Why Now</p>
+              <h2>早期瓶頸是 token；現在瓶頸是人會不會讀</h2>
+              <p class="lead">Simon Willison 提到，GPT-4 早期 8K token 限制下，Markdown 的效率很值得。但大型模型與 coding agent 的輸出變成長規格、長計畫、長報告後，真正的問題變成：人類是否還願意審查？</p>
+            </div>
+            <div class="visual">
+              <div class="matrix">
+                <div><b>過去</b><span>輸出短，格式越省越好。</span></div>
+                <div><b>現在</b><span>輸出長，審閱成本成為瓶頸。</span></div>
+                <div><b>下一步</b><span>把輸出做成能操作的介面。</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="HTML 的優勢" data-title="HTML 多了哪些能力" data-note="這張可以快速盤點 HTML artifact 的能力集合，讓非工程背景聽眾也能理解差異。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Capabilities</p>
+              <h2>HTML 把 AI 輸出從報告推向互動物件</h2>
+              <div class="cards">
+                <div class="card"><strong>資訊密度</strong><span>表格、色彩、空間排列與視覺層級，讓同樣資訊更容易掃讀。</span></div>
+                <div class="card"><strong>圖解能力</strong><span>SVG、流程圖、模組圖、資料流圖可直接嵌入一份檔案。</span></div>
+                <div class="card"><strong>雙向互動</strong><span>滑桿、按鈕、拖拉、篩選、copy/export 讓回饋回到 agent loop。</span></div>
+                <div class="card"><strong>分享成本</strong><span>HTML 上傳後就是網址，收件者不必理解 Markdown 檢視器。</span></div>
+              </div>
+            </div>
+            <div class="visual">
+              <div class="artifact">
+                <svg viewBox="0 0 520 420" role="img" aria-label="HTML 能力雷達圖">
+                  <polygon points="260,54 424,148 424,300 260,380 96,300 96,148" fill="rgba(35,100,170,0.08)" stroke="#171717" stroke-width="2" />
+                  <polygon points="260,82 392,162 372,286 260,338 134,284 128,166" fill="rgba(199,62,47,0.34)" stroke="#c73e2f" stroke-width="4" />
+                  <text x="260" y="36" text-anchor="middle" font-size="18" font-weight="800">視覺</text>
+                  <text x="458" y="154" text-anchor="middle" font-size="18" font-weight="800">互動</text>
+                  <text x="458" y="308" text-anchor="middle" font-size="18" font-weight="800">分享</text>
+                  <text x="260" y="408" text-anchor="middle" font-size="18" font-weight="800">審閱</text>
+                  <text x="60" y="308" text-anchor="middle" font-size="18" font-weight="800">結構</text>
+                  <text x="58" y="154" text-anchor="middle" font-size="18" font-weight="800">圖解</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="使用場景" data-title="最適合的五種工作" data-note="用具體應用連到使用者自己的工作流：不是所有 Markdown 都要變 HTML，而是挑人需要讀、看、改、決策的東西。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Use Cases</p>
+              <h2>最適合改成 HTML artifact 的場景</h2>
+              <ul class="list">
+                <li><span class="dot">A</span><span>規格、實作計畫、設計方向並排比較。</span></li>
+                <li><span class="dot">B</span><span>PR review：diff、嚴重性、旁註與跳轉連結。</span></li>
+                <li><span class="dot">C</span><span>研究報告、事故報告、週報與技術 explainer。</span></li>
+                <li><span class="dot">D</span><span>設計系統、元件狀態、互動 prototype。</span></li>
+                <li><span class="dot">E</span><span>臨時編輯器：ticket triage、feature flag、prompt tuner。</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="artifact browser">
+                <div class="window-dots"><span></span><span></span><span></span></div>
+                <div class="mini-doc">
+                  <div class="mini-title"></div>
+                  <div class="mini-grid">
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="範例集" data-title="二十個 HTML demo" data-note="引用官方範例集的分類。這些範例的價值在於把『文件』變成可打開、可操作、可匯出的頁面。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Gallery</p>
+              <h2>範例集把論點做成可打開的證據</h2>
+              <p class="lead">Thariq 的 gallery 收錄 20 個自含式 HTML 檔，分類包括 exploration、code review、design、prototype、diagram、deck、research、report、custom editor。</p>
+            </div>
+            <div class="visual">
+              <div class="matrix">
+                <div><b>Code Review</b><span>annotated diff、module map、PR writeup。</span></div>
+                <div><b>Design</b><span>token swatches、component variants。</span></div>
+                <div><b>Custom Editors</b><span>拖拉看板、設定編輯器、prompt live preview。</span></div>
+                <div><b>Reports</b><span>週報、incident timeline、圖表摘要。</span></div>
+                <div><b>Research</b><span>可折疊 explainer、tabbed snippets、glossary。</span></div>
+                <div><b>Decks</b><span>一個 HTML 檔就能做簡報。</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="反對意見" data-title="HTML 的成本" data-note="避免把這件事講成單向宣傳。反對方的重點很實際：成本、速度、diff、長期保存。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Critiques</p>
+              <h2>反對聲音：HTML 不是免費午餐</h2>
+              <ul class="list">
+                <li><span class="dot">1</span><span>同樣資訊，HTML 常比 Markdown 多出更多輸出 token。</span></li>
+                <li><span class="dot">2</span><span>生成速度較慢，且 verbose markup 可能稀釋模型注意力。</span></li>
+                <li><span class="dot">3</span><span>進版本控制時 diff 會很吵，不利長期共同維護。</span></li>
+                <li><span class="dot">4</span><span>HTML 適合看與互動，不一定適合當知識庫原始資料。</span></li>
+              </ul>
+            </div>
+            <div class="visual">
+              <div class="compare">
+                <div class="compare-panel">
+                  <h3>短期審閱</h3>
+                  <ul>
+                    <li>HTML 很強</li>
+                    <li>人更容易看懂</li>
+                    <li>適合一次性決策</li>
+                  </ul>
+                </div>
+                <div class="compare-panel">
+                  <h3>長期記憶</h3>
+                  <ul>
+                    <li>Markdown 仍強</li>
+                    <li>可搜尋、可 diff</li>
+                    <li>更適合知識庫</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="判斷框架" data-title="什麼時候用哪個" data-note="給一個實務決策框架。這張可以作為結論前的可操作建議。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Decision Rule</p>
+              <h2>不是二選一，而是依任務選格式</h2>
+              <div class="cards">
+                <div class="card"><strong>用 HTML</strong><span>需要讓人讀完、比較、操作、調參、審閱、簡報、分享給非技術讀者。</span></div>
+                <div class="card"><strong>用 Markdown</strong><span>需要長期保存、版本控制、grep、diff、筆記連結、作為原始知識庫。</span></div>
+                <div class="card"><strong>混合策略</strong><span>Markdown 當 source of truth，HTML 當 review surface 或臨時 UI。</span></div>
+                <div class="card"><strong>關鍵設計</strong><span>HTML artifact 最好提供 copy/export，讓互動結果能回到 agent 或 repo。</span></div>
+              </div>
+            </div>
+            <div class="visual">
+              <div class="artifact">
+                <svg viewBox="0 0 520 420" role="img" aria-label="格式決策流程">
+                  <rect x="155" y="34" width="210" height="58" fill="#fffaf0" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="260" y="70" text-anchor="middle" font-size="20" font-weight="800">AI 產出內容</text>
+                  <path d="M260 92 V136" stroke="#171717" stroke-width="4" marker-end="url(#flowArrow)" />
+                  <rect x="105" y="136" width="310" height="64" fill="#2364aa" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="260" y="174" text-anchor="middle" fill="#fff" font-size="20" font-weight="800">人需要互動審閱嗎？</text>
+                  <path d="M160 200 C120 246 106 276 100 322" stroke="#171717" stroke-width="4" fill="none" marker-end="url(#flowArrow)" />
+                  <path d="M360 200 C402 246 418 276 424 322" stroke="#171717" stroke-width="4" fill="none" marker-end="url(#flowArrow)" />
+                  <rect x="34" y="322" width="170" height="58" fill="#2f7d62" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="119" y="357" text-anchor="middle" fill="#fff" font-size="20" font-weight="800">HTML</text>
+                  <rect x="316" y="322" width="170" height="58" fill="#d7a629" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="401" y="357" text-anchor="middle" fill="#171717" font-size="20" font-weight="800">Markdown</text>
+                  <defs>
+                    <marker id="flowArrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                      <path d="M0,0 L0,6 L9,3 z" fill="#171717" />
+                    </marker>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="對教學與知識工作" data-title="這對一般使用者的啟發" data-note="讓它不只停留在工程師圈。HTML artifact 也適合教師、研究者、行政與知識工作者做互動式摘要。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Implications</p>
+              <h2>真正的變化：AI 文件開始像小工具</h2>
+              <p class="lead">對教師、研究者、行政與產品團隊來說，HTML artifact 的價值不是炫技，而是把「請 AI 寫一份報告」升級成「請 AI 做一個我能操作的理解介面」。</p>
+            </div>
+            <div class="visual">
+              <div class="cards">
+                <div class="card"><strong>教學</strong><span>把課程重點做成互動圖解、分層閱讀、即時小測。</span></div>
+                <div class="card"><strong>研究</strong><span>把文獻關係、概念框架、比較表做成可展開的頁面。</span></div>
+                <div class="card"><strong>行政</strong><span>把會議紀錄、待辦追蹤、風險清單做成可篩選 dashboard。</span></div>
+                <div class="card"><strong>開發</strong><span>把規格、PR、架構圖做成可審閱 artifact。</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide" data-section="結論" data-title="結論" data-note="用一句話收束：格式之爭的核心是人是否仍在 loop 裡。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Takeaway</p>
+              <h2>格式之爭的核心，其實是人是否還在 loop 裡</h2>
+              <p class="lead">Markdown 仍是優秀的長期記憶格式；HTML 則正在成為 AI agent 輸出給人審閱、理解、操作的中介層。未來的好工作流，很可能同時需要兩者。</p>
+            </div>
+            <div class="visual">
+              <div class="artifact">
+                <svg viewBox="0 0 520 420" role="img" aria-label="人機協作迴圈">
+                  <circle cx="260" cy="210" r="132" fill="rgba(35,100,170,0.08)" stroke="#171717" stroke-width="3" />
+                  <rect x="180" y="52" width="160" height="54" fill="#c73e2f" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="260" y="86" text-anchor="middle" fill="#fffaf0" font-size="20" font-weight="800">Agent</text>
+                  <rect x="44" y="183" width="150" height="54" fill="#2364aa" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="119" y="217" text-anchor="middle" fill="#fffaf0" font-size="20" font-weight="800">HTML</text>
+                  <rect x="326" y="183" width="150" height="54" fill="#2f7d62" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="401" y="217" text-anchor="middle" fill="#fffaf0" font-size="20" font-weight="800">Human</text>
+                  <rect x="180" y="314" width="160" height="54" fill="#d7a629" stroke="#171717" stroke-width="3" rx="8" />
+                  <text x="260" y="348" text-anchor="middle" fill="#171717" font-size="20" font-weight="800">Decision</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide full" data-section="來源" data-title="主要來源" data-note="最後保留來源頁，方便公開分享時讀者可以回查原始資料。">
+          <div class="slide-inner">
+            <div class="content">
+              <p class="kicker">Sources</p>
+              <h2>主要參考來源</h2>
+              <div class="sources">
+                <div class="source"><a href="https://claude.com/blog/using-claude-code-the-unreasonable-effectiveness-of-html" target="_blank" rel="noreferrer">Using Claude Code: The unreasonable effectiveness of HTML</a><small>Thariq Shihipar / Claude Blog</small></div>
+                <div class="source"><a href="https://thariqs.github.io/html-effectiveness/" target="_blank" rel="noreferrer">The unreasonable effectiveness of HTML examples</a><small>20 個 HTML artifact demo gallery</small></div>
+                <div class="source"><a href="https://simonwillison.net/2026/May/8/unreasonable-effectiveness-of-html/" target="_blank" rel="noreferrer">Simon Willison: Using Claude Code...</a><small>對 Markdown 預設工作流的再思考</small></div>
+                <div class="source"><a href="https://www.inside.com.tw/article/41251-from-md-to-html" target="_blank" rel="noreferrer">INSIDE 中文報導</a><small>中文脈絡整理</small></div>
+                <div class="source"><a href="https://dev.to/vishal_veerareddy_9cdd17d/html-is-the-new-markdown-3hf8" target="_blank" rel="noreferrer">DEV Community: HTML Is the New Markdown</a><small>整理支持與成本面的反對意見</small></div>
+                <div class="source"><a href="https://www.implicator.ai/shihipar-is-right-markdown-still-wins-memory/" target="_blank" rel="noreferrer">Shihipar Is Right. Markdown Still Wins Memory.</a><small>提出 HTML 適合短期審閱、Markdown 適合長期記憶的折衷觀點</small></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="notes" id="notes" aria-label="講者備註"></aside>
+
+        <div class="controls" aria-label="簡報控制">
+          <button class="nav-button" id="prevButton" type="button">上一張</button>
+          <button class="nav-button primary" id="nextButton" type="button">下一張</button>
+        </div>
+      </section>
+    </main>
+
+    <div class="overview" id="overview" hidden>
+      <div class="overview-panel">
+        <div class="overview-head">
+          <div>
+            <p class="kicker">Overview</p>
+            <h2>投影片總覽</h2>
+          </div>
+          <button class="icon-button" id="closeOverviewButton" type="button" aria-label="關閉總覽">×</button>
+        </div>
+        <div class="overview-grid" id="overviewGrid"></div>
+      </div>
+    </div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const thumbs = document.querySelector("#thumbs");
+      const overview = document.querySelector("#overview");
+      const overviewGrid = document.querySelector("#overviewGrid");
+      const notes = document.querySelector("#notes");
+      const progress = document.querySelector("#progress");
+      const counter = document.querySelector("#counter");
+      const sectionLabel = document.querySelector("#sectionLabel");
+      const prevButton = document.querySelector("#prevButton");
+      const nextButton = document.querySelector("#nextButton");
+      let index = 0;
+      let notesVisible = false;
+
+      function pad(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function go(nextIndex) {
+        index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle("active", slideIndex === index);
+        });
+        document.querySelectorAll(".thumb").forEach((thumb, thumbIndex) => {
+          thumb.setAttribute("aria-current", String(thumbIndex === index));
+        });
+        sectionLabel.textContent = slides[index].dataset.section;
+        counter.textContent = `${pad(index + 1)} / ${pad(slides.length)}`;
+        progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+        notes.textContent = slides[index].dataset.note || "";
+        notes.classList.toggle("visible", notesVisible);
+        prevButton.disabled = index === 0;
+        nextButton.disabled = index === slides.length - 1;
+        location.hash = `slide-${index + 1}`;
+      }
+
+      slides.forEach((slide, slideIndex) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "thumb";
+        button.innerHTML = `<span class="thumb-number">${pad(slideIndex + 1)}</span><span class="thumb-label">${slide.dataset.title}</span>`;
+        button.addEventListener("click", () => go(slideIndex));
+        thumbs.appendChild(button);
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "overview-card";
+        card.innerHTML = `<small>${pad(slideIndex + 1)} / ${slide.dataset.section}</small><strong>${slide.dataset.title}</strong>`;
+        card.addEventListener("click", () => {
+          overview.hidden = true;
+          go(slideIndex);
+        });
+        overviewGrid.appendChild(card);
+      });
+
+      prevButton.addEventListener("click", () => go(index - 1));
+      nextButton.addEventListener("click", () => go(index + 1));
+      document.querySelector("#homeButton").addEventListener("click", () => go(0));
+      document.querySelector("#overviewButton").addEventListener("click", () => {
+        overview.hidden = false;
+      });
+      document.querySelector("#closeOverviewButton").addEventListener("click", () => {
+        overview.hidden = true;
+      });
+      document.querySelector("#notesButton").addEventListener("click", () => {
+        notesVisible = !notesVisible;
+        notes.classList.toggle("visible", notesVisible);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+          event.preventDefault();
+          go(index + 1);
+        }
+        if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          go(index - 1);
+        }
+        if (event.key.toLowerCase() === "o") {
+          overview.hidden = !overview.hidden;
+        }
+        if (event.key.toLowerCase() === "n") {
+          notesVisible = !notesVisible;
+          notes.classList.toggle("visible", notesVisible);
+        }
+        if (event.key === "Escape") {
+          overview.hidden = true;
+        }
+      });
+
+      const match = location.hash.match(/slide-(\d+)/);
+      go(match ? Number(match[1]) - 1 : 0);
+    </script>
+  </body>
+</html>
