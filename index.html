@@ -390,6 +390,99 @@
         content: "";
       }
 
+      .wordcloud-panel {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+        min-height: 430px;
+        padding: 22px;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background:
+          linear-gradient(90deg, rgba(23, 23, 23, 0.04) 1px, transparent 1px),
+          linear-gradient(rgba(23, 23, 23, 0.04) 1px, transparent 1px),
+          rgba(255, 255, 255, 0.72);
+        background-size: 24px 24px;
+      }
+
+      .wordcloud-question {
+        margin: 0;
+        font-size: clamp(20px, 2vw, 28px);
+        font-weight: 900;
+        line-height: 1.35;
+      }
+
+      .wordcloud-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+      }
+
+      .wordcloud-input {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper-2);
+        color: var(--ink);
+        font-size: 16px;
+      }
+
+      .wordcloud-submit {
+        min-width: 78px;
+        padding: 10px 14px;
+        border: 1px solid var(--ink);
+        border-radius: var(--radius);
+        background: var(--blue);
+        color: white;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .wordcloud-submit:disabled {
+        cursor: wait;
+        opacity: 0.58;
+      }
+
+      .wordcloud-status {
+        min-height: 20px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .wordcloud {
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: center;
+        gap: 10px 14px;
+        min-height: 230px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.72);
+      }
+
+      .wordcloud-word {
+        display: inline-block;
+        color: var(--word-color, var(--ink));
+        font-family: Georgia, "Times New Roman", "Noto Serif TC", serif;
+        font-size: var(--word-size, 18px);
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 1.05;
+        transform: rotate(var(--word-rotate, 0deg));
+      }
+
+      .wordcloud-empty {
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 900;
+      }
+
       .window-dots {
         position: absolute;
         top: 15px;
@@ -848,25 +941,14 @@
               </div>
             </div>
             <div class="visual">
-              <div class="artifact">
-                <svg viewBox="0 0 520 420" role="img" aria-label="事件擴散圖">
-                  <rect x="44" y="46" width="150" height="70" fill="#c73e2f" stroke="#171717" stroke-width="3" rx="8" />
-                  <text x="119" y="88" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">X 貼文</text>
-                  <rect x="294" y="46" width="170" height="70" fill="#2364aa" stroke="#171717" stroke-width="3" rx="8" />
-                  <text x="379" y="88" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">Claude Blog</text>
-                  <rect x="64" y="250" width="150" height="70" fill="#2f7d62" stroke="#171717" stroke-width="3" rx="8" />
-                  <text x="139" y="292" text-anchor="middle" fill="#fffaf0" font-size="22" font-weight="800">範例集</text>
-                  <rect x="310" y="250" width="150" height="70" fill="#d7a629" stroke="#171717" stroke-width="3" rx="8" />
-                  <text x="385" y="292" text-anchor="middle" fill="#171717" font-size="22" font-weight="800">社群辯論</text>
-                  <path d="M195 81 H294" stroke="#171717" stroke-width="4" marker-end="url(#arrow)" />
-                  <path d="M355 116 C330 190 230 205 158 250" stroke="#171717" stroke-width="4" fill="none" marker-end="url(#arrow)" />
-                  <path d="M215 285 H310" stroke="#171717" stroke-width="4" marker-end="url(#arrow)" />
-                  <defs>
-                    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-                      <path d="M0,0 L0,6 L9,3 z" fill="#171717" />
-                    </marker>
-                  </defs>
-                </svg>
+              <div class="wordcloud-panel" aria-label="現場文字雲">
+                <p class="wordcloud-question">你認為使用 HTML 取代 Markdown 的理由為何？</p>
+                <form class="wordcloud-form" id="wordcloudForm">
+                  <input class="wordcloud-input" id="wordcloudInput" type="text" maxlength="28" autocomplete="off" placeholder="輸入你的理由" aria-label="輸入使用 HTML 取代 Markdown 的理由">
+                  <button class="wordcloud-submit" id="wordcloudSubmit" type="submit">送出</button>
+                </form>
+                <p class="wordcloud-status" id="wordcloudStatus">連線到文字雲資料庫中...</p>
+                <div class="wordcloud" id="wordcloud" aria-live="polite"></div>
               </div>
             </div>
           </div>
@@ -1177,6 +1259,15 @@
       const sectionLabel = document.querySelector("#sectionLabel");
       const prevButton = document.querySelector("#prevButton");
       const nextButton = document.querySelector("#nextButton");
+      const wordcloudForm = document.querySelector("#wordcloudForm");
+      const wordcloudInput = document.querySelector("#wordcloudInput");
+      const wordcloudSubmit = document.querySelector("#wordcloudSubmit");
+      const wordcloudStatus = document.querySelector("#wordcloudStatus");
+      const wordcloud = document.querySelector("#wordcloud");
+      const wordcloudEndpoint = "https://firestore.googleapis.com/v1/projects/classroom-points-7a4cc/databases/(default)/documents/wordcloud_words";
+      const wordcloudTopic = "html-markdown-reasons";
+      const wordcloudColors = ["#c73e2f", "#2364aa", "#2f7d62", "#d7a629", "#5b4b8a", "#171717"];
+      const wordcloudRotations = ["-5deg", "3deg", "0deg", "6deg", "-3deg"];
       let index = 0;
       let notesVisible = false;
 
@@ -1200,6 +1291,109 @@
         prevButton.disabled = index === 0;
         nextButton.disabled = index === slides.length - 1;
         location.hash = `slide-${index + 1}`;
+      }
+
+      function readStringField(document, fieldName) {
+        return document?.fields?.[fieldName]?.stringValue || "";
+      }
+
+      function normalizeWordcloudText(value) {
+        return value.trim().replace(/\s+/g, " ").slice(0, 28);
+      }
+
+      function renderWordcloud(items) {
+        if (!wordcloud) return;
+        wordcloud.innerHTML = "";
+        if (!items.length) {
+          const empty = document.createElement("span");
+          empty.className = "wordcloud-empty";
+          empty.textContent = "等待第一個理由";
+          wordcloud.appendChild(empty);
+          return;
+        }
+
+        const max = Math.max(...items.map((item) => item.count));
+        items.slice(0, 24).forEach((item, itemIndex) => {
+          const word = document.createElement("span");
+          const weight = item.count / max;
+          const size = Math.round(18 + weight * 26 + Math.min(item.text.length, 8));
+          word.className = "wordcloud-word";
+          word.textContent = item.text;
+          word.title = `${item.text}：${item.count} 票`;
+          word.style.setProperty("--word-size", `${size}px`);
+          word.style.setProperty("--word-color", wordcloudColors[itemIndex % wordcloudColors.length]);
+          word.style.setProperty("--word-rotate", wordcloudRotations[itemIndex % wordcloudRotations.length]);
+          wordcloud.appendChild(word);
+        });
+      }
+
+      async function loadWordcloud() {
+        if (!wordcloud) return;
+        try {
+          const response = await fetch(`${wordcloudEndpoint}?pageSize=100`);
+          if (!response.ok) throw new Error(`Firestore read failed: ${response.status}`);
+          const payload = await response.json();
+          const counts = new Map();
+
+          (payload.documents || []).forEach((document) => {
+            if (readStringField(document, "topic") !== wordcloudTopic) return;
+            const text = normalizeWordcloudText(readStringField(document, "text"));
+            if (!text) return;
+            const key = text.toLocaleLowerCase();
+            const current = counts.get(key) || { text, count: 0 };
+            current.count += 1;
+            counts.set(key, current);
+          });
+
+          const items = Array.from(counts.values()).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text, "zh-Hant"));
+          renderWordcloud(items);
+          if (wordcloudStatus) {
+            wordcloudStatus.textContent = items.length ? `已同步 ${items.reduce((sum, item) => sum + item.count, 0)} 則回應` : "已連線，等待回應";
+          }
+        } catch (error) {
+          renderWordcloud([]);
+          if (wordcloudStatus) {
+            wordcloudStatus.textContent = "文字雲暫時無法連線，請稍後再試";
+          }
+          console.error(error);
+        }
+      }
+
+      async function submitWordcloudReason(event) {
+        event.preventDefault();
+        const text = normalizeWordcloudText(wordcloudInput?.value || "");
+        if (!text) {
+          if (wordcloudStatus) wordcloudStatus.textContent = "請先輸入一個理由";
+          wordcloudInput?.focus();
+          return;
+        }
+
+        if (wordcloudSubmit) wordcloudSubmit.disabled = true;
+        if (wordcloudStatus) wordcloudStatus.textContent = "送出中...";
+        try {
+          const response = await fetch(wordcloudEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fields: {
+                topic: { stringValue: wordcloudTopic },
+                deck: { stringValue: "html-markdown-ai-deck" },
+                text: { stringValue: text },
+                normalized: { stringValue: text.toLocaleLowerCase() },
+                createdAt: { timestampValue: new Date().toISOString() },
+              },
+            }),
+          });
+          if (!response.ok) throw new Error(`Firestore write failed: ${response.status}`);
+          if (wordcloudInput) wordcloudInput.value = "";
+          if (wordcloudStatus) wordcloudStatus.textContent = "已送出，更新文字雲中...";
+          await loadWordcloud();
+        } catch (error) {
+          if (wordcloudStatus) wordcloudStatus.textContent = "送出失敗，請稍後再試";
+          console.error(error);
+        } finally {
+          if (wordcloudSubmit) wordcloudSubmit.disabled = false;
+        }
       }
 
       slides.forEach((slide, slideIndex) => {
@@ -1233,6 +1427,7 @@
 
       prevButton.addEventListener("click", () => go(index - 1));
       nextButton.addEventListener("click", () => go(index + 1));
+      wordcloudForm?.addEventListener("submit", submitWordcloudReason);
       document.querySelector("#homeButton").addEventListener("click", () => go(0));
       document.querySelector("#overviewButton").addEventListener("click", () => {
         overview.hidden = false;
@@ -1268,6 +1463,8 @@
 
       const match = location.hash.match(/slide-(\d+)/);
       go(match ? Number(match[1]) - 1 : 0);
+      loadWordcloud();
+      window.setInterval(loadWordcloud, 12000);
     </script>
   </body>
 </html>
