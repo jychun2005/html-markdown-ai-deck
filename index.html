@@ -483,6 +483,163 @@
         font-weight: 900;
       }
 
+      .transform-demo {
+        display: grid;
+        grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+        gap: 18px;
+        align-items: stretch;
+        margin-top: 24px;
+      }
+
+      .markdown-source,
+      .html-preview {
+        min-height: 390px;
+        overflow: hidden;
+        border: 2px solid var(--ink);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.86);
+      }
+
+      .demo-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 42px;
+        padding: 10px 14px;
+        border-bottom: 2px solid var(--ink);
+        background: #eee5d7;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .demo-panel-head span:last-child {
+        color: var(--muted);
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .markdown-code {
+        margin: 0;
+        padding: 18px;
+        color: #fff6df;
+        background: #1f2924;
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: clamp(13px, 1.12vw, 16px);
+        line-height: 1.62;
+        white-space: pre-wrap;
+      }
+
+      .html-preview {
+        position: relative;
+        background:
+          linear-gradient(90deg, rgba(23, 23, 23, calc(0.05 * (1 - var(--convert, 0)))) 1px, transparent 1px),
+          linear-gradient(rgba(23, 23, 23, calc(0.05 * (1 - var(--convert, 0)))) 1px, transparent 1px),
+          rgba(255, 250, 240, 0.88);
+        background-size: 24px 24px;
+      }
+
+      .preview-raw,
+      .preview-rendered {
+        position: absolute;
+        inset: 44px 0 0;
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+
+      .preview-raw {
+        padding: 18px;
+        color: #345;
+        font-family: "Cascadia Mono", Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.65;
+        opacity: calc(1 - var(--convert, 0));
+        transform: translateY(calc(var(--convert, 0) * 16px));
+        white-space: pre-wrap;
+      }
+
+      .preview-rendered {
+        display: grid;
+        align-content: center;
+        gap: 14px;
+        padding: 22px;
+        opacity: var(--convert, 0);
+        transform: translateY(calc((1 - var(--convert, 0)) * 16px));
+      }
+
+      .artifact-title {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", "Noto Serif TC", serif;
+        font-size: clamp(28px, 3.2vw, 42px);
+        line-height: 1.05;
+      }
+
+      .artifact-summary {
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      .artifact-cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .artifact-card {
+        min-height: 96px;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .artifact-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--green);
+      }
+
+      .artifact-card span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .artifact-quote {
+        margin: 0;
+        padding: 14px 16px;
+        border-left: 6px solid var(--red);
+        background: rgba(199, 62, 47, 0.08);
+        color: var(--ink);
+        font-weight: 800;
+        line-height: 1.5;
+      }
+
+      .conversion-control {
+        display: grid;
+        grid-column: 1 / -1;
+        gap: 10px;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 250, 240, 0.78);
+      }
+
+      .conversion-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .conversion-slider {
+        width: 100%;
+        accent-color: var(--red);
+      }
+
       .window-dots {
         position: absolute;
         top: 15px;
@@ -842,6 +999,15 @@
         .artifact {
           min-height: 330px;
         }
+
+        .transform-demo {
+          grid-template-columns: 1fr;
+        }
+
+        .markdown-source,
+        .html-preview {
+          min-height: 320px;
+        }
       }
 
       @media (max-width: 680px) {
@@ -869,6 +1035,11 @@
         }
 
         .event {
+          grid-template-columns: 1fr;
+        }
+
+        .wordcloud-form,
+        .artifact-cards {
           grid-template-columns: 1fr;
         }
       }
@@ -1036,31 +1207,68 @@
           </div>
         </section>
 
-        <section class="slide" data-section="使用場景" data-title="最適合的五種工作" data-note="用具體應用連到使用者自己的工作流：不是所有 Markdown 都要變 HTML，而是挑人需要讀、看、改、決策的東西。">
+        <section class="slide full" data-section="互動演示" data-title="Markdown 轉成 HTML" data-note="請現場拖曳滑桿：左邊保留 Markdown 原始碼，右邊會從原始文字逐步轉成可以掃讀的 HTML artifact。">
           <div class="slide-inner">
             <div class="content">
-              <p class="kicker">Use Cases</p>
-              <h2>最適合改成 HTML artifact 的場景</h2>
-              <ul class="list">
-                <li><span class="dot">A</span><span>規格、實作計畫、設計方向並排比較。</span></li>
-                <li><span class="dot">B</span><span>PR review：diff、嚴重性、旁註與跳轉連結。</span></li>
-                <li><span class="dot">C</span><span>研究報告、事故報告、週報與技術 explainer。</span></li>
-                <li><span class="dot">D</span><span>設計系統、元件狀態、互動 prototype。</span></li>
-                <li><span class="dot">E</span><span>臨時編輯器：ticket triage、feature flag、prompt tuner。</span></li>
-              </ul>
-            </div>
-            <div class="visual">
-              <div class="artifact browser">
-                <div class="window-dots"><span></span><span></span><span></span></div>
-                <div class="mini-doc">
-                  <div class="mini-title"></div>
-                  <div class="mini-grid">
-                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
-                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
-                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
-                    <div class="mini-card"><b></b><i></i><i></i><i></i></div>
+              <p class="kicker">Live Demo</p>
+              <h2>拖曳滑桿，看 Markdown 慢慢長成 HTML artifact</h2>
+              <div class="transform-demo" id="transformDemo" style="--convert: 0.45;">
+                <div class="markdown-source">
+                  <div class="demo-panel-head">
+                    <span>Markdown 原始碼</span>
+                    <span>.md</span>
+                  </div>
+                  <pre class="markdown-code"># AI Agent 工作紀錄
+
+**問題**：Markdown 很適合寫，
+但長篇審閱不容易。
+
+## 今天的重點
+- 需要比較方案
+- 需要看到風險
+- 需要快速回饋
+
+> HTML artifact 把文件
+> 變成可操作的理解介面。</pre>
+                </div>
+
+                <div class="html-preview" aria-label="HTML 可讀預覽">
+                  <div class="demo-panel-head">
+                    <span>HTML artifact 閱讀版</span>
+                    <span id="conversionPercent">45%</span>
+                  </div>
+                  <pre class="preview-raw"># AI Agent 工作紀錄
+
+**問題**：Markdown 很適合寫，
+但長篇審閱不容易。
+
+## 今天的重點
+- 需要比較方案
+- 需要看到風險
+- 需要快速回饋
+
+> HTML artifact 把文件
+> 變成可操作的理解介面。</pre>
+                  <div class="preview-rendered" aria-hidden="true">
+                    <h3 class="artifact-title">AI Agent 工作紀錄</h3>
+                    <p class="artifact-summary">Markdown 很適合快速書寫；HTML artifact 讓長篇內容變得更容易審閱、比較與回饋。</p>
+                    <div class="artifact-cards">
+                      <div class="artifact-card"><strong>比較方案</strong><span>把選項並排呈現，降低來回翻找。</span></div>
+                      <div class="artifact-card"><strong>看到風險</strong><span>用顏色、層級與區塊凸顯重點。</span></div>
+                      <div class="artifact-card"><strong>快速回饋</strong><span>讓讀者直接操作、調整與決策。</span></div>
+                    </div>
+                    <p class="artifact-quote">HTML artifact 把文件變成可操作的理解介面。</p>
                   </div>
                 </div>
+
+                <label class="conversion-control" for="conversionSlider">
+                  <span class="conversion-meta">
+                    <span>原始 Markdown</span>
+                    <span id="conversionLabel">正在轉換：45%</span>
+                    <span>可讀 HTML</span>
+                  </span>
+                  <input class="conversion-slider" id="conversionSlider" type="range" min="0" max="100" value="45" aria-label="調整 Markdown 轉換成 HTML 的程度">
+                </label>
               </div>
             </div>
           </div>
@@ -1268,6 +1476,10 @@
       const wordcloudTopic = "html-markdown-reasons";
       const wordcloudColors = ["#c73e2f", "#2364aa", "#2f7d62", "#d7a629", "#5b4b8a", "#171717"];
       const wordcloudRotations = ["-5deg", "3deg", "0deg", "6deg", "-3deg"];
+      const transformDemo = document.querySelector("#transformDemo");
+      const conversionSlider = document.querySelector("#conversionSlider");
+      const conversionLabel = document.querySelector("#conversionLabel");
+      const conversionPercent = document.querySelector("#conversionPercent");
       let index = 0;
       let notesVisible = false;
 
@@ -1325,6 +1537,18 @@
           word.style.setProperty("--word-rotate", wordcloudRotations[itemIndex % wordcloudRotations.length]);
           wordcloud.appendChild(word);
         });
+      }
+
+      function updateConversionDemo(value) {
+        const amount = Math.max(0, Math.min(100, Number(value)));
+        const ratio = amount / 100;
+        transformDemo?.style.setProperty("--convert", ratio.toFixed(2));
+        if (conversionLabel) {
+          conversionLabel.textContent = `正在轉換：${amount}%`;
+        }
+        if (conversionPercent) {
+          conversionPercent.textContent = `${amount}%`;
+        }
       }
 
       async function loadWordcloud() {
@@ -1428,6 +1652,7 @@
       prevButton.addEventListener("click", () => go(index - 1));
       nextButton.addEventListener("click", () => go(index + 1));
       wordcloudForm?.addEventListener("submit", submitWordcloudReason);
+      conversionSlider?.addEventListener("input", (event) => updateConversionDemo(event.target.value));
       document.querySelector("#homeButton").addEventListener("click", () => go(0));
       document.querySelector("#overviewButton").addEventListener("click", () => {
         overview.hidden = false;
@@ -1463,6 +1688,7 @@
 
       const match = location.hash.match(/slide-(\d+)/);
       go(match ? Number(match[1]) - 1 : 0);
+      updateConversionDemo(conversionSlider?.value || 45);
       loadWordcloud();
       window.setInterval(loadWordcloud, 12000);
     </script>
