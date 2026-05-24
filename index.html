@@ -185,6 +185,13 @@
         height: 42px;
       }
 
+      .button-icon {
+        display: block;
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+      }
+
       .icon-button:hover,
       .nav-button:hover {
         border-color: rgba(23, 23, 23, 0.36);
@@ -608,9 +615,18 @@
       }
 
       .nav-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         min-width: 104px;
         padding: 11px 16px;
         font-weight: 900;
+      }
+
+      .nav-button .button-icon {
+        width: 22px;
+        height: 22px;
       }
 
       .nav-button.primary {
@@ -777,8 +793,12 @@
         </button>
         <nav class="thumbs" id="thumbs" aria-label="投影片列表"></nav>
         <div class="rail-actions">
-          <button class="icon-button" id="overviewButton" type="button" title="總覽" aria-label="開啟總覽">☷</button>
-          <button class="icon-button" id="notesButton" type="button" title="講者備註" aria-label="切換講者備註">✎</button>
+          <button class="icon-button" id="overviewButton" type="button" title="總覽" aria-label="開啟總覽">
+            <img class="button-icon" src="assets/controls/overview.png" alt="" aria-hidden="true">
+          </button>
+          <button class="icon-button" id="notesButton" type="button" title="講者備註" aria-label="切換講者備註">
+            <img class="button-icon" src="assets/controls/notes.png" alt="" aria-hidden="true">
+          </button>
         </div>
       </aside>
 
@@ -1119,8 +1139,14 @@
         <aside class="notes" id="notes" aria-label="講者備註"></aside>
 
         <div class="controls" aria-label="簡報控制">
-          <button class="nav-button" id="prevButton" type="button">上一張</button>
-          <button class="nav-button primary" id="nextButton" type="button">下一張</button>
+          <button class="nav-button" id="prevButton" type="button">
+            <img class="button-icon" src="assets/controls/prev.png" alt="" aria-hidden="true">
+            <span>上一張</span>
+          </button>
+          <button class="nav-button primary" id="nextButton" type="button">
+            <span>下一張</span>
+            <img class="button-icon" src="assets/controls/next.png" alt="" aria-hidden="true">
+          </button>
         </div>
       </section>
     </main>
@@ -1132,7 +1158,9 @@
             <p class="kicker">Overview</p>
             <h2>投影片總覽</h2>
           </div>
-          <button class="icon-button" id="closeOverviewButton" type="button" aria-label="關閉總覽">×</button>
+          <button class="icon-button" id="closeOverviewButton" type="button" aria-label="關閉總覽">
+            <img class="button-icon" src="assets/controls/close.png" alt="" aria-hidden="true">
+          </button>
         </div>
         <div class="overview-grid" id="overviewGrid"></div>
       </div>
